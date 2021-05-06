@@ -1,0 +1,178 @@
+<html>
+	<head>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<style>
+			html, body {margin: 0;}
+			body {
+				background: #222;
+				font-family: 'Helvetica Neue', 'Helvetica', sans-serif;
+				color: #aaa;
+				margin: 0;
+				width: 100vw;
+				display: flex;
+				margin-bottom: 50px;
+			}
+
+			div#container {
+				width: min(calc(100vw - 50px), 700px);
+				margin: auto;
+			}
+
+			h1,h2,h3 {
+				color: #eee;
+			}
+
+			ul#overview, ul#overview ul {
+				list-style: disc;
+			}
+
+			a {
+				color: #5eacff;
+				text-decoration: none;
+			}
+
+			::selection {
+				background: #ffab0c;
+				color: #111;
+			}
+
+			.subsection {
+				border-left: 1px solid #fff4;
+				padding-left: 20px;
+				margin-left: max(min(40px, calc(100vw - 500px)), 0px)/*40px*/;
+			}
+
+			code {
+				background: #111;
+				padding: 2px 5px;
+				border-radius: 3px;
+				color: #eee;
+			}
+
+			table {border-collapse: collapse;}
+			th {background: #555;}
+			tr.chunk-header td {background: #444;}
+			td {background: #333;}
+			th, td {border: 1px solid #666; padding: 5px;}
+
+
+			.warning {
+				display: inline-block;
+				padding: 4px;
+				font-size: 13px;
+				margin: 8px 0;
+				background: #444;
+				color: #ddd;
+				border-radius: 3px;
+				border: 1px solid #777;
+			}
+
+		</style>
+	</head>
+	<body>
+    <h2>WARNING: THIS PAGE IS A WORK IN PROGRESS!</h2>
+		<div id="container">
+			<h1>Wave File Format</h1>
+			<h5>A reformatted archive of <a href="https://web.archive.org/web/20141101112743/http:/www.sonicspot.com/guide/wavefiles.html">this</a> page.</h5>
+			<!-- This site is so obscure, I'm not even sure how spen found it. -->
+
+			<hr>
+
+			<h3>Table of Contents</h3>
+
+			<ul id="overview">
+				<li>Overview</li>
+				<li>Data Formats</li>
+				<li>File Structure
+					<ul>
+						<li>File Header</li>
+						<li>File Chunks
+							<ul>
+								<li>Format</li>
+								<li>Data</li>
+								<li>Fact</li>
+								<li>Cue</li>
+								<li>Playlist</li>
+								<li>Data List</li>
+								<li>Label</li>
+								<li>Labeled Text</li>
+								<li>Note</li>
+								<li>Sample</li>
+								<li>Instrument</li>
+							</ul>
+						</li>
+					</ul>
+				</li>
+			</ul>
+
+		<hr>
+		<h2>Overview</h2>
+
+		<hr>
+		<h2>Data Formats</h2>
+
+		<hr>
+		<h2>File Structure</h2>
+
+
+		<div class="subsection">
+			<h3>File Header</h3>
+
+			<table>
+				<tr><th>Size</th> <th>Description</th> <th>Value</th></tr>
+				<tr><td>4</td> <td>Chunk ID</td> <td><code>RIFF</code></td></tr>
+				<tr><td>4</td> <td>Chunk Data Size</td> <td>(filesize)</td></tr>
+				<tr><td>4</td> <td>RIFF Type</td> <td><code>WAVE</code></td></tr>
+			</table>
+			
+			<h3>File Chunks</h3>
+			<div class="subsection">
+				<h3>Format</h3>
+
+				<span class="warning">WARNING: Chunk ID strings with lengths lower than 4 must end with a space!</span>
+
+				<table>
+					<tr><th>Size</th> <th>Description</th> <th>Value</th></tr>
+					<tr>
+						<td>4</td> <td>Chunk ID</td> <td><code>fmt&nbsp;</code></td>
+					</tr>
+					<tr>
+						<td>4</td> <td>Chunk Data Size</td> <td>(16+)</td>
+					</tr>
+					<tr title="The compression type ID. 1 is uncompressed.">
+						<td>2</td> <td>Compression Code</td> <td>(0x0000 - 0xFFFF)</td>
+					</tr>
+					<tr title="The number of audio channels that the file contains.">
+						<td>2</td> <td>Number of channels</td> <td>(0x0000 - 0xFFFF)</td>
+					</tr>
+					<tr title="The number of sample slices per-second.">
+						<td>4</td> <td>Sample rate</td> <td>(0x00000000 - 0xFFFFFFFF)</td>
+					</tr>
+					<tr title="How many bytes of data must be streamed per-second to play the file. Can be calculated with SampleRate * BlockAlign">
+						<td>4</td> <td>Average bytes per second</td> <td>(0x00000000 - 0xFFFFFFFF)</td>
+					</tr>
+					<tr title="The number of bytes per sample slice.">
+						<td>2</td> <td>Block align</td> <td>(1 - 65,535)</td>
+					</tr>
+					<tr title="The number of bits used to define each sample. This value is usually 8, 16, 24 or 32.">
+						<td>2</td> <td>Significant bits per sample</td> <td>(2 - 65,535)</td>
+					</tr>
+				</table>
+
+
+				<h3>Data</h3>
+
+				<table>
+					<tr><th>Size</th> <th>Description</th> <th>data</th></tr>
+					<tr><td>4</td> <td>Chunk ID</td> <td><code>DATA</code></td></tr>
+					<tr><td>4</td> <td>Chunk Data Size</td> <td>(filesize)</td></tr>
+					<tr><td>4</td> <td>Chunk Data</td> <td>(data)</td></tr>
+				</table>
+
+				<h3>Fact</h3>
+			</div>
+		</div>
+
+		</div>
+	</body>
+</html>
