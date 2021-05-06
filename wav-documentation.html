@@ -39,7 +39,7 @@
 			.subsection {
 				border-left: 1px solid #fff4;
 				padding-left: 20px;
-				margin-left: max(min(40px, calc(100vw - 500px)), 0px)/*40px*/;
+				margin-left: max(min(40px, calc(100vw - 600px)), 0px)/*40px*/;
 			}
 
 			code {
@@ -135,9 +135,9 @@
 			</p>
 
 			<table>
-				<tr><th>Size</th> <th>Description</th> <th>Value</th></tr>
+				<tr><th>Size (Bytes)</th> <th>Description</th> <th>Value</th></tr>
 				<tr><td>4</td> <td>Chunk ID</td> <td><code>RIFF</code></td></tr>
-				<tr><td>4</td> <td>Chunk Data Size</td> <td>(filesize)</td></tr>
+				<tr><td>4</td> <td>Chunk data size</td> <td>(filesize)</td></tr>
 				<tr><td>4</td> <td>RIFF Type</td> <td><code>WAVE</code></td></tr>
 			</table>
 			
@@ -155,15 +155,15 @@
 				<span class="warning">WARNING: Chunk ID strings with lengths lower than 4 must end with a space!</span>
 
 				<table>
-					<tr><th>Size</th> <th>Description</th> <th>Value</th></tr>
+					<tr><th>Size (Bytes)</th> <th>Description</th> <th>Value</th></tr>
 					<tr>
 						<td>4</td> <td>Chunk ID</td> <td><code>fmt&nbsp;</code></td>
 					</tr>
 					<tr>
-						<td>4</td> <td>Chunk Data Size</td> <td>(16+)</td>
+						<td>4</td> <td>Chunk data size</td> <td>(16+)</td>
 					</tr>
 					<tr title="The compression type ID. 1 is uncompressed.">
-						<td>2</td> <td>Compression Code</td> <td>(0x0000 - 0xFFFF)</td>
+						<td>2</td> <td>Compression code</td> <td>(0x0000 - 0xFFFF)</td>
 					</tr>
 					<tr title="The number of audio channels that the file contains.">
 						<td>2</td> <td>Number of channels</td> <td>(0x0000 - 0xFFFF)</td>
@@ -202,9 +202,9 @@
 				</i></p>
 
 				<table>
-					<tr><th>Size</th> <th>Description</th> <th>data</th></tr>
+					<tr><th>Size (Bytes)</th> <th>Description</th> <th>data</th></tr>
 					<tr><td>4</td> <td>Chunk ID</td> <td><code>data</code></td></tr>
-					<tr><td>4</td> <td>Chunk Data Size</td> <td>(chunk data size)</td></tr>
+					<tr><td>4</td> <td>Chunk data size</td> <td>(chunk data size)</td></tr>
 					<tr><td colspan="3">Chunk Data</td></tr>
 				</table>
 
@@ -219,9 +219,9 @@
 				</p>
 
 				<table>
-					<tr><th>Size</th> <th>Description</th> <th>data</th></tr>
+					<tr><th>Size (Bytes)</th> <th>Description</th> <th>data</th></tr>
 					<tr><td>4</td> <td>Chunk ID</td> <td><code>fact</code></td></tr>
-					<tr><td>4</td> <td>Chunk Data Size</td> <td>(chunk data size)</td></tr>
+					<tr><td>4</td> <td>Chunk data size</td> <td>(chunk data size)</td></tr>
 					<tr title="A single 4-byte value that specifies the number of samples in the waveform data chunk. TODO: Accurate?"><td colspan="3">Format-dependant data</td></tr>
 				</table>
 
@@ -237,9 +237,9 @@
 				<span class="warning">WARNING: Unofficially Depreciated!</span>
 
 				<table>
-					<tr><th>Size</th> <th>Description</th> <th>data</th></tr>
+					<tr><th>Size (Bytes)</th> <th>Description</th> <th>data</th></tr>
 					<tr><td>4</td> <td>Chunk ID</td> <td><code>slnt</code></td></tr>
-					<tr><td>4</td> <td>Chunk Data Size</td> <td>(chunk data size)</td></tr>
+					<tr><td>4</td> <td>Chunk data size</td> <td>(chunk data size)</td></tr>
 					<tr><td colspan="3">Alternating Silent/Data chunks</td></tr>
 				</table>
 
@@ -255,11 +255,43 @@
 				</p>
 
 				<table>
-					<tr><th>Size</th> <th>Description</th> <th>data</th></tr>
+					<tr><th>Size (Bytes)</th> <th>Description</th> <th>data</th></tr>
 					<tr><td>4</td> <td>Chunk ID</td> <td><code>slnt</code></td></tr>
-					<tr><td>4</td> <td>Chunk Data Size</td> <td>(chunk data size)</td></tr>
+					<tr><td>4</td> <td>Chunk data size</td> <td>(chunk data size)</td></tr>
 					<tr><td>4</td> <td>Number of silent samples</td> <td>0 - 0xFFFFFFFF</td></tr>
 				</table>
+
+
+
+
+
+				<h3>Cue</h3>
+
+				<p>
+					A cue chunk specifies one or more sample offsets which are often used to mark noteworthy sections of audio. The cue chunk is optional, and if included, a single cue chunk should specify all cue points for the "WAVE" chunk. No more than one cue chunk is allowed in a "WAVE" chunk. 
+				</p>
+
+				<table>
+					<tr><th>Size (Bytes)</th> <th>Description</th> <th>data</th></tr>
+					<tr><td>4</td> <td>Chunk ID</td> <td><code>cue&nbsp;</code></td></tr>
+					<tr><td>4</td> <td>Chunk data size</td> <td>(chunk data size)</td></tr>
+					<tr><td>4</td> <td>Number of cue points</td> <td>0 - 0xFFFFFFFF</td></tr>
+					<tr><td colspan="3">Cue points</td></tr>
+				</table>
+
+				<div class="subsection">
+					<h4>Cue Point Format</h4>
+					<table>
+						<tr><th>Size (Bytes)</th> <th>Description</th></tr>
+						<tr><td>4</td> <td>ID</td></tr>
+						<tr><td>4</td> <td>Position</td></tr>
+						<tr><td>4</td> <td>Data chunk ID</td></tr>
+						<tr><td>4</td> <td>Chunk start</td></tr>
+						<tr><td>4</td> <td>Block start</td></tr>
+						<tr><td>4</td> <td>Sample offset</td></tr>
+					</table>
+
+				</div>
 
 			</div>
 		</div>
