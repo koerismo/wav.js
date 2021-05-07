@@ -15,7 +15,7 @@ class wave {
 		this.chunks = this.readChunks().map((x)=>{return this.decodeChunk(x)})
 	}
 
-	function setSampleRate() {
+	setSampleRate() {
 		this.chunks[getFormatChunk()].content.sample_rate = ind
 	}
 
@@ -33,13 +33,12 @@ class wave {
 	}
 
 	getFormatChunk() {
-		const chunkind = getChunkInd('fmt')
+		const chunkind = this.getChunkInd('fmt')
 		if (chunkind == -1) {throw('File is missing format (fmt) chunk!')}
 		return chunkind
 	}
 
 	readChunks() {
-
 
 		var pos = 4*3 // First chunk ID is always RIFF (0x52494646)
 		var chunks = []
@@ -49,7 +48,7 @@ class wave {
 		while (pos < (this.raw.length-1) && chunksRead < 500) {
 			chunksRead += 1
 
-			console.log(`Reading chunk #${chunksRead} at ${pos} with ${this.raw.length-pos} remaining.`)
+			//console.log(`Reading chunk #${chunksRead} at ${pos} with ${this.raw.length-pos} remaining.`)
 
 			var chunkID   = this.b32int(this.raw.slice(pos,pos+4))
 			var chunkSize = this.b32int(this.raw.slice(pos+4,pos+8))
@@ -59,6 +58,7 @@ class wave {
 				size: chunkSize,
 				data: chunkData
 			})
+			console.log('Chunk has length', 8+chunkSize)
 			pos += (8+chunkSize)
 		}
 
@@ -66,24 +66,24 @@ class wave {
 	}
 
 	decodeChunk(chunk) {
-		console.log('Parsed chunk type as ',this.b8str((chunk.id).bytes(4)))
-		var out = {type:'unknown', type_id:chunk.id, content:{data: chunk.data}}
+		//console.log('Parsed chunk type as ',this.b8str((chunk.id).bytes(4)))
+		var out = {type:'unknown', id:chunk.id, size: chunk.size, content:{data: chunk.data}}
 		switch(chunk.id) {
 			case 1635017060: // data
-				console.log('Parsed data block')
 				out = {
 					type: 'data',
-					type_id: 1635017060,
+					size: chunk.size,
+					id: 1635017060,
 					content: {
 						data:	chunk.data // TODO: split into channels
 					}
 				}
 				break;
 			case 544501094: // fmt
-				console.log('Parsed format block')
 				out = {
 					type: 'fmt',
-					type_id: 544501094,
+					size: chunk.size,
+					id: 544501094,
 					content: {
 						compression_code:	this.b16int(chunk.data.slice(0,2)),
 						num_channels:		this.b16int(chunk.data.slice(2,4)),
@@ -95,19 +95,57 @@ class wave {
 				}
 				break;
 			case 1952670054: // fact
-				console.log('fact')
 				out.type = 'fact'
 				break;
 			case 1953393779: // slnt
-				console.log('slnt')
 				out.type = 'slnt'
 				break;
 			case 543520099: // cue
-				console.log('cue')
 				out.type = 'cue'
 				break;
 		}
 
 		return out
+	}
+
+	encodeChunk(chunk) {
+		var out = null
+		switch(chunk.type) {
+			case 'fmt':
+				out = [
+					...chunk.id.bytes(4),
+					...chunk.size.bytes(4),
+					...chunk.content.compression_code.bytes(2),
+					...chunk.content.num_channels.bytes(2),
+					...chunk.content.sample_rate.bytes(4),
+					...chunk.content.avg_bytes_per_second.bytes(4),
+					...chunk.content.block_align.bytes(2),
+					...chunk.content.signif_bits_per_sample.bytes(2)
+				]
+				break;
+			default:
+				out = [
+					...chunk.id.bytes(4),
+					...chunk.size.bytes(4),
+					...chunk.content.data
+				]
+				break;
+		}
+		console.log('Chunk has length', out.length)
+		return out
+	}
+
+
+	writeChunks() {
+		var body = []
+		this.chunks.forEach((x)=>{body = body.concat(this.encodeChunk(x))})
+
+		var header = [
+			'WAVE'.bytes(4),
+			body.length.bytes(4),
+			'RIFF'.bytes(4)
+		]
+
+		return new Uint8Array(header.concat(body))
 	}
 }
