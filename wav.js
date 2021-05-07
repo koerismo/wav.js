@@ -6,19 +6,37 @@ Thanks, documentation at  https://web.archive.org/web/20141101112743/http:/www.s
 
 
 String.prototype.bytes = function() { return this.split('').map((x)=>{return x.charCodeAt()}) }
-
+Number.prototype.bytes = function(len) { return Array(len).fill('').map((x,y)=>{return (this >>> y*8) & 0xFF }) }
 
 
 class wave {
 	constructor(data) {
 		this.raw = Array.from(data)
-		this.chunks = this.readChunks().map((x)=>{return this.parseChunk(x)})
-
-		this.fmt = this.chunks.filter((x)=>{return x.type == 'fmt'})[0]
+		this.chunks = this.readChunks().map((x)=>{return this.decodeChunk(x)})
 	}
+
+	function setSampleRate() {
+		this.chunks[getFormatChunk()].content.sample_rate = ind
+	}
+
 
 	b32int(arr) {return new Uint32Array( (new Uint8Array(arr)).buffer.slice(-4) )[0]}
 	b16int(arr) {return new Uint16Array( (new Uint8Array(arr)).buffer.slice(-2) )[0]}
+	b8str(arr) {return new TextDecoder().decode(new Uint8Array(arr))}
+
+	getChunkInd(t) {
+		let out = -1
+		this.chunks.forEach((x,y)=>{
+			if (x.type == t) {out = y}
+		})
+		return out
+	}
+
+	getFormatChunk() {
+		const chunkind = getChunkInd('fmt')
+		if (chunkind == -1) {throw('File is missing format (fmt) chunk!')}
+		return chunkind
+	}
 
 	readChunks() {
 
@@ -28,8 +46,10 @@ class wave {
 
 		var chunksRead = 0 // Temporary. Just to make sure that I don't crash the browser.
 
-		while (pos < this.raw.length && chunksRead < 500) {
+		while (pos < (this.raw.length-1) && chunksRead < 500) {
 			chunksRead += 1
+
+			console.log(`Reading chunk #${chunksRead} at ${pos} with ${this.raw.length-pos} remaining.`)
 
 			var chunkID   = this.b32int(this.raw.slice(pos,pos+4))
 			var chunkSize = this.b32int(this.raw.slice(pos+4,pos+8))
@@ -40,13 +60,13 @@ class wave {
 				data: chunkData
 			})
 			pos += (8+chunkSize)
-			console.log(`Read chunk #${chunksRead} with type ${chunkID} and length ${chunkSize}`)
 		}
 
 		return chunks
 	}
 
-	parseChunk(chunk) {
+	decodeChunk(chunk) {
+		console.log('Parsed chunk type as ',this.b8str((chunk.id).bytes(4)))
 		var out = {type:'unknown', type_id:chunk.id, content:{data: chunk.data}}
 		switch(chunk.id) {
 			case 1635017060: // data
@@ -76,12 +96,15 @@ class wave {
 				break;
 			case 1952670054: // fact
 				console.log('fact')
+				out.type = 'fact'
 				break;
 			case 1953393779: // slnt
 				console.log('slnt')
+				out.type = 'slnt'
 				break;
 			case 543520099: // cue
 				console.log('cue')
+				out.type = 'cue'
 				break;
 		}
 
