@@ -286,6 +286,11 @@ class wave {
 		this._formatChunk.content.sample_rate = new_rate
 	}
 
+	audioGetSample(sample_num) {
+		const increment = this._formatChunk.content.signif_bits_per_sample/8
+		return this.nBitInt(  data_orig.slice(sample_num*increment, calcPos*increment+increment)  )
+	}
+
 	/*
 	audioVolume(vol_multiplier) { // DOES NOT WORK. I don't know how to fix this??? It looks right.
 		const increment = this._formatChunk.content.signif_bits_per_sample/8
