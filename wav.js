@@ -288,7 +288,7 @@ class wave {
 
 	audioGetSample(sample_num) {
 		const increment = this._formatChunk.content.signif_bits_per_sample/8
-		return this.nBitInt(  this._dataChunk.content.data.slice(sample_num*increment, calcPos*increment+increment)  )
+		return this.nBitInt(  this._dataChunk.content.data.slice(sample_num*increment, sample_num*increment+increment)  )
 	}
 
 	/*
