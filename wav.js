@@ -13,11 +13,22 @@ class wave {
 	constructor(data) {
 		this.raw = Array.from(data)
 		this.chunks = this._readChunks().map((x)=>{return this._decodeChunk(x)})
-		if (!this._getFormatChunk() || !this._getDataChunk()) {}
+
+		if (!this._dataChunk || !this._formatChunk) {}
 	}
 
 	get properties() {
-		return this.chunks[this._getFormatChunk()].content
+		return this._formatChunk.content
+	}
+
+	get sampleCount() {
+		return this._dataChunk.content.data.length/this._formatChunk.content.num_channels
+	}
+
+	nBitInt(arr) {
+		var out = 0
+		arr.forEach((x,y)=>{ out += x << (y*8) })
+		return out
 	}
 
 	b32int(arr) {return new Uint32Array( (new Uint8Array(arr)).buffer.slice(-4) )[0]}
@@ -32,16 +43,17 @@ class wave {
 		return out
 	}
 
-	_getFormatChunk() {
+	get _formatChunk() {
 		const chunkind = this._getChunkInd('fmt')
 		if (chunkind == -1) {throw('File is missing format (fmt) chunk!')}
-		return chunkind
+		return this.chunks[chunkind]
 	}
 
-	_getDataChunk() {
+	get _dataChunk() {
+		// TODO: Allow using multiple data chunks!
 		const chunkind = this._getChunkInd('data')
-		if (chunkind == -1) {throw('File is missing format (fmt) chunk!')}
-		return chunkind
+		if (chunkind == -1) {throw('File is missing data (data) chunk!')}
+		return this.chunks[chunkind]
 	}
 
 	_readChunks() {
@@ -73,6 +85,11 @@ class wave {
 	_decodeChunk(chunk) {
 		//console.log('Parsed chunk type as ',this.b8str((chunk.id).bytes(4)))
 		var out = {type:'unknown', id:chunk.id, size: chunk.size, content:{data: chunk.data}}
+
+		const self = this // Honestly fuck you javascript
+		function b16(start) {return self.b16int(chunk.data.slice(start,start+2))}
+		function b32(start) {return self.b32int(chunk.data.slice(start,start+4))}
+
 		switch(chunk.id) {
 			case 1635017060: // data
 				out = {
@@ -90,26 +107,100 @@ class wave {
 					size: chunk.size,
 					id: 544501094,
 					content: {
-						compression_code:	this.b16int(chunk.data.slice(0,2)),
-						num_channels:		this.b16int(chunk.data.slice(2,4)),
-						sample_rate:		this.b32int(chunk.data.slice(4,8)),
-						avg_bytes_per_second:	this.b32int(chunk.data.slice(8,12)),
-						block_align:		this.b16int(chunk.data.slice(12,14)),
-						signif_bits_per_sample:	this.b16int(chunk.data.slice(14,16))
+						compression_code:	b16(0),
+						num_channels:		b16(2),
+						sample_rate:		b32(4),
+						avg_bytes_per_second:	b32(8),
+						block_align:		b16(12),
+						signif_bits_per_sample:	b16(14)
 					}
 				}
 				break;
-			case 1952670054: // fact
+			case 1819307379: // smpl
+				out = {
+					type: 'smpl',
+					size: chunk.size,
+					id: 1819307379,
+					content: {
+						manufacturer_id:	b32(0),
+						product_id:		b32(4),
+						sample_period:		b32(8),
+						midi_unity_note:	b32(12),
+						midi_pitch_fraction:	b32(16),
+						SMPTE_format:		b32(20),
+						SMPTE_offset:		b32(24),
+						num_sample_loops:	b32(28),
+						sampler_data:		b32(32),
+						sample_loops:		this._decodeSampleLoops(chunk.data.slice(36))
+					}
+				}
+				break;
+			case 543520099: // cue
+				out = {
+					type: 'cue',
+					size: chunk.size,
+					id: 543520099,
+					content: {
+						cues: this._decodeCuePoints(chunk.data),
+						data: chunk.data // Temporary export support. This makes all of the calculated values above read-only.
+					}
+				}
+				break;
+			/*case 1952670054: // fact
 				out.type = 'fact'
 				break;
 			case 1953393779: // slnt
 				out.type = 'slnt'
-				break;
-			case 543520099: // cue
-				out.type = 'cue'
-				break;
+				break;*/
 		}
 
+		return out
+	}
+
+	_decodeCuePoints(cueChunk) {
+		var out = []
+		for (var pos = 0; pos < cueChunk.length; pos += 24) {
+		out.push({
+				id:		this.b32int(cueChunk.slice(0,4)),
+				position:	this.b32int(cueChunk.slice(4,8)),
+				data_chunk_id:	this.b32int(cueChunk.slice(8,12)),
+				chunk_start:	this.b32int(cueChunk.slice(12,16)),
+				block_start:	this.b32int(cueChunk.slice(16,20)),
+				sample_offset:	this.b32int(cueChunk.slice(20,24))
+			})
+		}
+		return out
+	}
+
+	_encodeCuePoints() {} // TODO: empty
+
+	_decodeSampleLoops(sampleChunk) {
+		var out = []
+		for (var pos = 0; pos < sampleChunk.length; pos += 24) {
+			out.push({
+				id:		this.b32int(sampleChunk.slice(0,4)),
+				type:		this.b32int(sampleChunk.slice(4,8)),
+				start:		this.b32int(sampleChunk.slice(8,12)),
+				end:		this.b32int(sampleChunk.slice(12,16)),
+				fraction:	this.b32int(sampleChunk.slice(16,20)),
+				play_count:	this.b32int(sampleChunk.slice(20,24))
+			})
+		}
+		return out
+	}
+
+	_encodeSampleLoops(chunks) {
+		var out = []
+		chunks.forEach((cueChunk)=>{
+			out = out.concat([ // This is super inefficient. So sue me.
+				...cueChunk.id.bytes(4),
+				...cueChunk.type.bytes(4),
+				...cueChunk.start.bytes(4),
+				...cueChunk.end.bytes(4),
+				...cueChunk.fraction.bytes(4),
+				...cueChunk.play_count.bytes(4)
+			])
+		})
 		return out
 	}
 
@@ -128,10 +219,27 @@ class wave {
 					...chunk.content.signif_bits_per_sample.bytes(2)
 				]
 				break;
+			case 'smpl':
+				out = [
+					...chunk.id.bytes(4),
+					...(36+chunk.content.sample_loops.length*24).bytes(4),
+					...chunk.content.manufacturer_id.bytes(4),
+					...chunk.content.product_id.bytes(4),
+					...chunk.content.sample_period.bytes(4),
+					...chunk.content.midi_unity_note.bytes(4),
+					...chunk.content.midi_pitch_fraction.bytes(4),
+					...chunk.content.SMPTE_format.bytes(4),
+					...chunk.content.SMPTE_offset.bytes(4),
+					...chunk.content.num_sample_loops.bytes(4),
+					...chunk.content.sampler_data.bytes(4),
+					...this._encodeSampleLoops(chunk.content.sample_loops)
+
+				]
+				break;
 			default:
 				out = [
 					...chunk.id.bytes(4),
-					...chunk.size.bytes(4),
+					...chunk.content.data.length.bytes(4),
 					...chunk.content.data
 				]
 				break;
@@ -150,10 +258,74 @@ class wave {
 			...'WAVE'.bytes(4)
 		]
 
-		console.log(header)
-
 		return new Uint8Array(header.concat(body))
 	}
+
+
+	/* Friendly-er functions for audio manipulation */
+
+	audioResample(new_rate) {
+		// Number to increment by in bytes.
+		const increment = this._formatChunk.content.signif_bits_per_sample/8
+		const mult = this._formatChunk.content.sample_rate/new_rate
+		const data_orig = this._dataChunk.content.data
+
+		var out = new Uint8Array(data_orig.length*mult)
+		function nFloor(value,inc) {return Math.floor((value/inc))*inc}
+
+		for (var pos = 0; Math.round(pos*mult) < data_orig.length; pos += increment) {
+
+			const calcPos = nFloor(Math.round(pos*mult),increment)
+			const value = this.nBitInt(  data_orig.slice(calcPos, calcPos+increment)  )
+			const bytes = value.bytes(increment)
+
+			for (let i = 0; i < increment; i++) {out[pos+i] = bytes[i]}
+		}
+
+		this._dataChunk.content.data = out
+		this._formatChunk.content.sample_rate = new_rate
+	}
+
+	/*
+	audioVolume(vol_multiplier) { // DOES NOT WORK. I don't know how to fix this??? It looks right.
+		const increment = this._formatChunk.content.signif_bits_per_sample/8
+		const data_orig = this._dataChunk.content.data
+
+		var out = new Uint8Array(data_orig.length)
+
+		for (var pos = 0; pos < data_orig.length; pos += increment) {
+
+			const value = this.nBitInt(  data_orig.slice(pos, pos+increment)  )
+			const bytes = (value * vol_multiplier).bytes(increment)
+
+			for (let i = 0; i < increment; i++) {out[pos+i] = bytes[i]}
+		}
+
+		this._dataChunk.content.data = out
+	}
+
+	audioBitDepth(new_depth) { // DOES NOT WORK. I really don't know what I am doing.
+		const increment = this._formatChunk.content.signif_bits_per_sample/8
+		const data_orig = this._dataChunk.content.data
+
+		var out = new Uint8Array(data_orig.length)
+
+		for (var pos = 0; pos < data_orig.length; pos += increment) {
+
+			const value = this.nBitInt(  data_orig.slice(pos, pos+increment)  )
+			const bytes = value.bytes(new_depth/8)
+
+			const cPos = pos/increment*(new_depth/8)
+			for (let i = 0; i < new_depth; i++) {out[cPos+i] = bytes[i]}
+		}
+
+		this._dataChunk.content.data = out
+		this._formatChunk.content.signif_bits_per_sample = new_depth
+	}
+
+
+	audioSplitChannels() {}
+	*/
 
 	blob() {return new Blob([this._writeChunks()])}
 }
