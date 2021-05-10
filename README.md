@@ -18,4 +18,4 @@ reader.onload = function() {
 reader.readAsArrayBuffer(myFile);
 ```
 
-#### See the [documentation](/wiki) for more information.
+#### See the [documentation](https://github.com/koerismo/wav.js/wiki) for more information.
