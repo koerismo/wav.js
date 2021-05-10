@@ -146,7 +146,7 @@
 
 			<h3>File Chunks</h3>
 			<div class="subsection">
-				<h3>Format</h3>
+				<h3 id="format_chunk">Format</h3>
 
 				<p>
 					The format chunk contains information about how the waveform data is stored and should be played back including the type of compression used, number of channels, sample rate, bits per sample and other attributes. 
@@ -193,7 +193,7 @@
 
 
 
-				<h3>Data</h3>
+				<h3 id="data_chunk">Data</h3>
 
 				<p><i>
 				The data chunk contains the digital audio sample data which can be decoded using the format and compression method specified in the format chunk.
@@ -212,7 +212,7 @@
 
 
 
-				<h3>Fact</h3>
+				<h3 id="fact_chunk">Fact</h3>
 
 				<p>
 					A fact chunk stores compression code dependant information about the contents of the Wave file. It is required by all compressed WAVE formats and if the waveform data is contained inside a "wavl" LIST chunk, but is not required for the uncompressed PCM WAVE format files. 
@@ -229,7 +229,7 @@
 
 
 
-				<h3>Wave List</h3>
+				<h3 id="wave_list_chunk">Wave List</h3>
 
 				<p>
 					A wave list chunk is used to specify several alternating "slnt" and "data" chunks. These chunks can help reduce a Wave file's size while specifying audible segments of samples when a stream of digital audio contains several periods of silence. 
@@ -248,7 +248,7 @@
 
 
 
-				<h3>Silent</h3>
+				<h3 id="silent_chunk">Silent</h3>
 
 				<p>
 					A silent chunk is used to specify a segment of silence that will last some duration of samples. It is always contained within a wave list chunk.
@@ -265,7 +265,7 @@
 
 
 
-				<h3>Cue</h3>
+				<h3 id="cue_chunk">Cue</h3>
 
 				<p>
 					A cue chunk specifies one or more sample offsets which are often used to mark noteworthy sections of audio. The cue chunk is optional, and if included, a single cue chunk should specify all cue points for the "WAVE" chunk. No more than one cue chunk is allowed in a "WAVE" chunk. 
@@ -280,7 +280,7 @@
 				</table>
 
 				<div class="subsection">
-					<h4>Cue Point Format</h4>
+					<h4 id="cue_chunk_entry">Cue Point Format</h4>
 					<table>
 						<tr><th>Size (Bytes)</th> <th>Description</th></tr>
 						<tr><td>4</td> <td>ID</td></tr>
