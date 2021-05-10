@@ -17,3 +17,5 @@ reader.onload = function() {
 
 reader.readAsArrayBuffer(myFile);
 ```
+
+#### See the [documentation](/koerismo/wav.js/wiki) for more information.
