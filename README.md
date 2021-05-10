@@ -1,5 +1,5 @@
 # wav.js
-A javascript library for accessing more low-level data in .wav files.
+A javascript library for accessing and modifying low-level data in .wav files.
 
 Example Usage:
 
